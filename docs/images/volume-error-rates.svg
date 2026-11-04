@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300" viewBox="0 0 800 300">
+<rect width="800" height="300" fill="white"/>
+<g font-family="Arial" fill="#172033">
+<text x="25" y="35" font-size="24">Error Rate by Request Volume</text>
+<text x="25" y="65" font-size="15">Lower: fewer than 120 requests; Higher: 120 or more</text>
+<text x="25" y="125" font-size="18">Lower volume</text>
+<rect x="180" y="100" width="169.30" height="40" fill="#2563eb"/>
+<text x="364.30" y="126" font-size="18">1.13%</text>
+<text x="25" y="205" font-size="18">Higher volume</text>
+<rect x="180" y="180" width="324.84" height="40" fill="#2563eb"/>
+<text x="519.84" y="206" font-size="18">2.17%</text>
+<text x="25" y="270" font-size="14">Group error rate = total errors / total requests × 100.</text></g></svg>

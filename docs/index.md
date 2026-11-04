@@ -1,113 +1,140 @@
-# Signal Design for System Monitoring
+# Service Reliability and Request Volume
 
-Continuous Intelligence | Project 03 | Example Report
+Continuous Intelligence | Project 03 | Darrion Maurice Stringer
+
+Author: Darrion Maurice Stringer
+Date: 2026-11
 
 ## Overview
 
-This project explores how raw operational measurements
-can be transformed into useful monitoring signals.
+I investigated whether service reliability differs between observations with lower and higher request volumes.
 
-Individual measurements provide information,
-but derived signals can make system behavior
-easier to interpret and compare.
+I used the example system metrics and added a success-rate signal. Then I grouped the observations by request volume and compared error rates, success rates, and average response times.
 
 ## Data
 
-The example contains 10 observations of system activity.
+The provided example dataset contains 10 observations with three measurements:
 
-Each observation includes:
+- requests: number of requests handled.
+- errors: number of failed requests.
+- total_latency_ms: total response time in milliseconds.
 
-- `requests` - number of requests handled.
-- `errors` - number of failed requests.
-- `total_latency_ms` - cumulative response time.
-
-[View Example Dataset](https://github.com/denisecase/cintel-03-signal-design/blob/main/data/system_metrics.csv)
+[View Dataset](https://github.com/dstringer03/cintel-03-signal-design-custom/blob/main/data/system_metrics.csv)
 
 ## Methods
 
-The pipeline creates three monitoring signals.
+I used Python and Polars to load the CSV, calculate signals, group observations, and save the results.
 
-### Error Rate
+Before calculating the comparisons, the script checks for required columns, missing values, negative measurements, and error counts greater than request counts.
 
-Error rate measures the proportion of failed requests.
+### Signals
 
-    error_rate = errors / requests
+- Error rate = errors / requests.
+- Success rate = (requests - errors) / requests.
+- Average latency = total_latency_ms / requests.
+- Request volume = requests per observation.
 
-### Average Latency
+For my D2 experiment, I added success_rate. I predicted values between 97.5% and 100%, and the results matched that prediction.
 
-Average latency estimates response time per request.
+When requests are zero, the added success-rate signal is null because there are no requests to evaluate. This dataset contains no zero-request observations.
 
-    avg_latency_ms = total_latency_ms / requests
+### Volume Groups
 
-### Throughput
+I chose 120 requests as the comparison cutoff:
 
-The example uses the number of requests per observation
-as its throughput indicator.
+- Lower volume: fewer than 120 requests.
+- Higher volume: 120 requests or more.
 
-    throughput = requests
+This gives five observations in each group. The cutoff is an analytical choice, not an established performance standard.
 
-The pipeline handles zero-request observations
-without dividing by zero.
+### Group Calculations
+
+I calculated each group's error rate using total errors divided by total requests.
+
+Group success rate uses total successful requests divided by total requests.
+
+Group average latency uses total latency divided by total requests.
+
+These calculations weight the results by request counts rather than averaging the individual observation rates.
 
 ## Results
 
-The example signals reveal:
+| Measure | Lower volume | Higher volume |
+|---|---:|---:|
+| Observations | 5 | 5 |
+| Total requests | 443 | 785 |
+| Total errors | 5 | 17 |
+| Error rate | 1.13% | 2.17% |
+| Success rate | 98.87% | 97.83% |
+| Average latency | 29.12 ms | 30.70 ms |
 
-| Signal | Observed Range |
-|---|---|
-| Error rate | 0% to 2.5% |
-| Average latency | 25.0 to 33.71 ms |
-| Requests per observation | 60 to 200 |
+![Error rates for lower and higher request volumes](images/volume-error-rates.svg)
 
-The output contains the original measurements
-alongside the derived monitoring signals.
+[View Signals by Volume Group](https://github.com/dstringer03/cintel-03-signal-design-custom/blob/main/artifacts/volume_signals.csv)
 
-[View Signal Results](https://github.com/denisecase/cintel-03-signal-design/blob/main/artifacts/signals.csv)
+[View Group Comparison](https://github.com/dstringer03/cintel-03-signal-design-custom/blob/main/artifacts/volume_comparison.csv)
 
 ## Interpretation
 
-Error rate provides a useful indicator of reliability,
-while average latency describes responsiveness.
+The higher-volume group had a higher error rate and slightly slower average responses.
 
-Request counts provide additional context about activity.
+Its error rate was about 2.17%, compared with 1.13% for the lower-volume group. Average response time was about 30.70 milliseconds, compared with 29.12 milliseconds.
 
-Together, these signals offer a more informative view
-of system behavior than the raw measurements alone.
+This suggests an association between higher request volume and poorer performance in this small dataset. It does not prove that request volume caused the differences.
+
+I learned why rates are useful. Comparing 17 errors with 5 errors alone would ignore the different numbers of requests handled by each group.
 
 ## Limitations
 
-The example does not establish acceptable performance
-thresholds or evaluate changes over time.
+- The dataset contains only 10 observations.
+- The 120-request cutoff was chosen for this comparison.
+- Other factors that could affect performance are not included.
+- The analysis does not establish acceptable performance thresholds.
+- Request counts are not normalized by elapsed time. Comparing them as workload levels assumes comparable observation intervals.
+- The reactive app remains the example interface; this custom comparison runs through volume_analysis.py.
 
-Request counts are not normalized by elapsed time,
-so they represent throughput only when observation
-intervals are comparable.
+## Next Steps
 
-## Conclusion
+If I continued this project, I would collect more observations with timestamps and equal measurement intervals. I would also try different grouping cutoffs to see whether the finding remains consistent.
 
-Effective monitoring begins with thoughtful signal design.
+## Run the Project
 
-Signals should reflect the operational questions
-that the monitoring system is intended to answer.
+From the project root, run the original signal pipeline:
 
-## Documentation Index
+    uv run python -m cintel.signal_design
 
-- **Home** - this landing page
-- [**Project Instructions**](project-instructions.md)
-- [**Glossary**](glossary.md)
-- [**API**](api.md)
-- [**Reactive App**](./app/index.html)
+Run my custom volume comparison:
+
+    uv run python -m cintel.volume_analysis
+
+The custom script saves two CSV files in artifacts/ and generates the chart in docs/images/.
+
+## Verification
+
+The custom script ran successfully and produced two groups of five observations.
+
+I checked the group calculations:
+
+- Lower-volume error rate: 5 / 443 × 100 = approximately 1.13%.
+- Higher-volume error rate: 17 / 785 × 100 = approximately 2.17%.
 
 ## Project Links
 
-- [GitHub Repository](https://github.com/denisecase/cintel-03-signal-design)
-- [Example Pipeline](https://github.com/denisecase/cintel-03-signal-design/blob/main/src/cintel/signal_design.py)
-- [Results and Artifacts](https://github.com/denisecase/cintel-03-signal-design/tree/main/artifacts)
-- [Project Instructions](project-instructions.md)
+- [GitHub Repository](https://github.com/dstringer03/cintel-03-signal-design-custom)
+- [Custom Analysis Code](https://github.com/dstringer03/cintel-03-signal-design-custom/blob/main/src/cintel/volume_analysis.py)
+- [Results and Artifacts](https://github.com/dstringer03/cintel-03-signal-design-custom/tree/main/artifacts)
+- [D2 Experiment](https://github.com/dstringer03/cintel-03-signal-design-custom/blob/main/README.md#d2-experiment-adding-success-rate)
 
-## Project Resources
+## Documentation Index
 
 - [Project Instructions](project-instructions.md)
+- [Glossary](glossary.md)
+- [API](api.md)
+- [Reactive App](./app/index.html)
+
+## Resources
+
+Based on the example project by Denise Case.
+
+- [Original Example Repository](https://github.com/denisecase/cintel-03-signal-design)
 - [Professional Python Guide](https://denisecase.github.io/pro-analytics-02/)
-- [Professional Python Project Explainer](https://pup-pack.github.io/professional-python-project-explainer/).
-- [Suggested Datasets](https://denisecase.github.io/pro-analytics-02/reference/datasets/cintel/)
