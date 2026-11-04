@@ -201,3 +201,18 @@ testing, documentation, and code quality.
 - [Professional Python Workflow Guide](https://denisecase.github.io/pro-analytics-02/)
 - [Citation](CITATION.cff)
 - [License](LICENSE)
+## D2 Experiment: Adding Success Rate
+
+I added a success_rate signal to show the proportion of requests that succeeded.
+
+Formula: success_rate = (requests - errors) / requests.
+
+Prediction: I expected success rates between 97.5% and 100%, based on the original error rates.
+
+Actual result: The pipeline added the success_rate column to artifacts/signals.csv. Across the 10 records, success rates ranged from 97.5% to 100%, matching my prediction.
+
+For example, 120 requests with 3 errors gave 117 successful requests: 117 / 120 = 0.975, or 97.5%.
+
+I learned that the same measurements can answer different monitoring questions. Error rate describes failures, while success rate describes successful requests.
+
+When requests are zero, the new success rate is null because there are no requests to evaluate. The current dataset has no zero-request rows, so that case was not tested in this run.

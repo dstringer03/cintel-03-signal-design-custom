@@ -40,10 +40,10 @@ def load_timeseries_metrics(data_file: Path) -> pl.DataFrame:
 
 
 def design_signals(df: pl.DataFrame) -> pl.DataFrame:
-    """Add derived signal columns: error_rate, avg_latency_ms, throughput.
+    """Add error rate, average latency, throughput, and success rate.
 
-    Per-request signals are only computed when requests > 0, to avoid
-    dividing by zero; otherwise they default to 0.0.
+    Success rate is successful requests divided by total requests.
+    When there are no requests, success rate is undefined (null).
     """
     is_requests_positive = pl.col("requests") > 0
 
@@ -58,6 +58,10 @@ def design_signals(df: pl.DataFrame) -> pl.DataFrame:
             .otherwise(0.0)
             .alias("avg_latency_ms"),
             pl.col("requests").alias("throughput"),
+            pl.when(is_requests_positive)
+            .then((pl.col("requests") - pl.col("errors")) / pl.col("requests"))
+            .otherwise(None)
+            .alias("success_rate"),
         ]
     ).select(
         [
@@ -67,6 +71,7 @@ def design_signals(df: pl.DataFrame) -> pl.DataFrame:
             "error_rate",
             "avg_latency_ms",
             "throughput",
+            "success_rate",
         ]
     )
 
